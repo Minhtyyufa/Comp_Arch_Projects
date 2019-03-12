@@ -1,18 +1,18 @@
 .text
 .global main
-.extern printf
-.extern scanf
+.extern printf	/* import printf */
+.extern scanf	/* import scanf */
 
 .data
 .balign 4
-result_array:	.skip 21
-first_word:	.skip 400
-second_word:	.skip 400
-input_msg_1:	.asciz "Input first string: "
-input_msg_2:	.asciz "Input second string: " 
-input_format:	.string "%s"
-output_msg:	.asciz "The concatenated string is: %s\n"
-return: 	.word 0
+result_array:	.skip 21	/* array of 21 bytes to store the result. 20 input characters and a null charater */
+first_word:	.skip 100	/* array of 100 bytes for first input, excessive amount so the user doesn't seg fault the program */
+second_word:	.skip 100	/* array of 100 bytes for second input */
+input_msg_1:	.asciz "Input first string: "	/* first input prompt */
+input_msg_2:	.asciz "Input second string: " 	/* second input prompt */
+input_format:	.string "%s"	/* input format for scanf */
+output_msg:	.asciz "The concatenated string is: %s\n"	/* output format to print the result */
+return: 	.word 0		/* return variable */
 
 .balign 4
 main:
@@ -63,34 +63,35 @@ error1:
 	bx lr			/* exit */
 
 loop2:
-	ldrb r2, [r0, r1]
-	cmp r2, #0x00	
-	beq end
-	cmp r1, #10
-	beq error2
-	str r2, [r4, r5]
-	add r5, r5, #1
-	add r1, r1, #1
-	b loop2
+	ldrb r2, [r0, r1]	/* r2 <- element in address r0 + r1 */
+	cmp r2, #0x00		/* Compares r2 with the null character */
+	beq end			/* If they are the same end successfully */
+	cmp r1, #10		/* Compares r1 with 10 if they are the same than the second input is invalid */
+	beq error2		/* Branches to error2 if the second input is invalid */
+	str r2, [r4, r5]	/* r4 + r5 <- r2 stores r2 into the result char array with the offset of r5 */
+	add r5, r5, #1		/* Increment the offset for the result */
+	add r1, r1, #1		/* Increment the offset of the second word */
+	b loop2			/* Loop again */
 
 error2:
-	mov r0, #22
-	ldr r1, ptr_return
-	ldr lr, [r1]
-	bx lr
+	mov r0, #22		/* r0 <- 22 Error code for error 2 */
+	ldr r1, ptr_return	/* r1 <- &return */
+	ldr lr, [r1]		/* lr <- element in r1 */
+	bx lr			/* exit */
 
 end:
-	mov r2, #0x00
-	str r2, [r4, r5]
-	ldr r1, ptr_result 
-	ldr r0, =output_msg		
-	bl printf
+	mov r2, #0x00		/* r2 <- null character */
+	str r2, [r4, r5]	/* adds null character to the end of the result char array */
+	ldr r1, ptr_result 	/* r1 <- &result */
+	ldr r0, =output_msg	/* r0 <- &output_msg */	
+	bl printf		/* branch to printf */
 	
-	mov r0, r5
-	ldr r1, ptr_return
-	ldr lr, [r1]
-	bx lr
+	mov r0, r5		/* r0 <- character count */
+	ldr r1, ptr_return	/* r1 <- &return */
+	ldr lr, [r1]		/* lr <- element in r1 */
+	bx lr			/* exit */
 	
+/* pointers to the stored variables */	
 ptr_return:	.word return
 ptr_result:	.word result_array
 ptr_first_word:	.word first_word
