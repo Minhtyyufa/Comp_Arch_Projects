@@ -29,7 +29,7 @@ odd:
 	beq end		/* Calls end when r0 reaches 1 */
 	add r2, r2, #1	/* Increment the loop counter */
 	add r0, r0, r0 , lsl #1	/* r0 = r0 + 2*r0 */
-	add r0, #1	/* r0 = r0 + 1 */
+	add r0, r0, #1	/* r0 = r0 + 1 */
 	b odd_or_even	/* Calls odd_or_even */
 
 /* even: r0 = r0/2 */
