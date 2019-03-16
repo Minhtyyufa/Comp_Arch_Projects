@@ -5,17 +5,21 @@ If the second input string is over 10 characters, the program will exit with cod
 Otherwise, the program will output the concatenated string and will exit with the character count.
 
 To compile and run the program, run these commands:
+    
     make clean
     make
     ./project1
 
 The program will then prompt the user for the first string by displaying the message:
+    
     Input first string: 
 This is where the user should input their first string
 
 The program will then prompt the user for the second string by displaying the message:
+    
     Input second string:
 This is where the user should input their second string
 
 If no errors are thrown, the program will output:
+    
     The concatenated string is: [concatenated string]
