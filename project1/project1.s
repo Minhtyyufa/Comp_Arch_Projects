@@ -6,8 +6,7 @@
 .data
 .balign 4
 result_array:	.skip 21	/* array of 21 bytes to store the result. 20 input characters and a null charater */
-first_word:	.skip 100	/* array of 100 bytes for first input, excessive amount so the user doesn't seg fault the program */
-second_word:	.skip 100	/* array of 100 bytes for second input */
+input_word:	.skip 100	/* array of 100 bytes for the inputs, excessive amount so the user doesn't seg fault the program */
 input_msg_1:	.asciz "Input first string: "	/* first input prompt */
 input_msg_2:	.asciz "Input second string: " 	/* second input prompt */
 input_format:	.string "%s"	/* input format for scanf */
@@ -23,10 +22,10 @@ main:
 	bl printf		/* branches to printf */
 	
 	ldr r0, =input_format	/* r0 <- &input_format Tells scanf the input format from the user */
-	ldr r1, ptr_first_word	/* r1 <- &first_word Tells scanf where to store the char array */
+	ldr r1, ptr_input_word	/* r1 <- &input_word Tells scanf where to store the char array */
 	bl scanf		/* branches to scanf */
 	
-	ldr r0, ptr_first_word	/* r0 <- &first_word */
+	ldr r0, ptr_input_word	/* r0 <- &input_word */
 	ldr r4, ptr_result	/* r4 <- &result */
 	mov r5, #0 		/* r5 <- 0 Offset index */	
 	
@@ -39,10 +38,10 @@ init_loop2:
 	bl printf		/* branches to printf */
 	
 	ldr r0, =input_format	/* r0 <- &input_format */ 
-	ldr r1, ptr_second_word	/* r1 <- &first_word */
+	ldr r1, ptr_input_word	/* r1 <- &input_word */
 	bl scanf		/* branches to scanf */
 	
-	ldr r0, ptr_second_word /* r0 <- &second_word */
+	ldr r0, ptr_input_word /* r0 <- &input_word */
 	mov r1, #0		/* r1 <- 0 Offset for the second input */
 	b loop2			/* starts loop2 */
 
@@ -94,5 +93,4 @@ end:
 /* pointers to the stored variables */	
 ptr_return:	.word return
 ptr_result:	.word result_array
-ptr_first_word:	.word first_word
-ptr_second_word:.word second_word
+ptr_input_word:	.word input_word
