@@ -1,4 +1,4 @@
-# Project 1
+# Project 1: Concatenate Two Strings
 This program prompts the user for two strings, concatenates them, and prints the result. 
 If the first input string is over 10 characters, the program will exit with code 21.
 If the second input string is over 10 characters, the program will exit with code 22.
