@@ -1,3 +1,8 @@
+/* 
+	Minh-Thai Nguyen and Sophie Jaro
+	This program concatenates two strings, taking inputs from the user
+*/
+
 .text
 .global main
 .extern printf	/* import printf */
