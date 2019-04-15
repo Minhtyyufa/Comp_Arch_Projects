@@ -1,3 +1,8 @@
+/* 
+	Minh-Thai Nguyen and Sophie Jaro
+	This program concatenates two strings, taking inputs from the user
+*/
+
 .text
 .global main
 .extern printf	/* import printf */
@@ -12,6 +17,8 @@ input_msg_2:	.asciz "Input second string: " 	/* second input prompt */
 input_format:	.string "%s"	/* input format for scanf */
 output_msg:	.asciz "The concatenated string is: %s\n"	/* output format to print the result */
 return: 	.word 0		/* return variable */
+error_code_1:	.word 21	/* error code for invalid string 1 */
+error_code_2:	.word 22	/* error code for invalid string 2 */
 
 .balign 4
 main:
@@ -56,7 +63,8 @@ loop1:
 	b loop1			/* Loop again */
 
 error1: 
-	mov r0, #21		/* r0 <- 21 Error code for error 1 */
+	ldr r0, ptr_error_1	/* r0 <- %error_code_1 Error code for error 1 */
+	ldr r0, [r0]
 	ldr r1, ptr_return	/* r1 <- &return */
 	ldr lr, [r1]		/* lr <- element in r1 */
 	bx lr			/* exit */
@@ -73,7 +81,8 @@ loop2:
 	b loop2			/* Loop again */
 
 error2:
-	mov r0, #22		/* r0 <- 22 Error code for error 2 */
+	ldr r0, ptr_error_2	/* r0 <- %error_code_2 Error code for error 2 */
+	ldr r0, [r0]
 	ldr r1, ptr_return	/* r1 <- &return */
 	ldr lr, [r1]		/* lr <- element in r1 */
 	bx lr			/* exit */
@@ -90,7 +99,11 @@ end:
 	ldr lr, [r1]		/* lr <- element in r1 */
 	bx lr			/* exit */
 	
+
+
 /* pointers to the stored variables */	
 ptr_return:	.word return
 ptr_result:	.word result_array
 ptr_input_word:	.word input_word
+ptr_error_1: 	.word error_code_1
+ptr_error_2:	.word error_code_2
