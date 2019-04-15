@@ -1,6 +1,7 @@
 # Project 2: Read and Write to a File and Sort 
 
 Minh-Thai Nguyen and Sophie Jaro
+
 This program sorts an array of up to 100 elements from a given input file and outputs the result to an output file.
 
 To run the program first make the executable by typing:
