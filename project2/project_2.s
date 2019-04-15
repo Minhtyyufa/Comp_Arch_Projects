@@ -22,7 +22,7 @@ r_mode:		.string "r"	/* read mode for fscanf */
 w_mode:		.string "w"	/* write mode for fscanf */
 
 file_format:	.string "%d"	/* input format for fscanf */ 
-array:		.skip 404	/* allocation for the array */
+array:		.skip 404	/* allocation for the array. Needed one more element because of the way the loop works */
 size_of_array:	.word 0		/* var for size_of_array. Actually size of array*4 */
 file_name:	.skip 100	/* char array to store file_name */	
 file:		.word 0		/* ptr to file */
