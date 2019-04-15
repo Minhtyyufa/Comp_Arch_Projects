@@ -30,7 +30,7 @@ out_msg:	.asciz "%d \n"	/* output format for fscanf */
 return:		.word 0		/* var for return address */
 
 /* error messages */
-error_no_input: .string "Could not find the input file\n"	/* error msg for no input file */
+error_no_input: .string "ERROR: Could not find the input file\n"	/* error msg for no input file */
 error_too_big:	.string "ERROR: File is too big\n"		/* error msg for too big of an array */
 
 .balign 4
@@ -52,7 +52,7 @@ get_infile:
 	bl scanf
 	
 	
-/* Opens file and initializes incrementer for reading */
+/* Opens file and initializes iterator for reading */
 init_read:
 	ldr r1, =r_mode /* r1 <- &r_mode This is an input parameter for open_file as defined below*/
 	bl open_file	/* branches to open_file */
@@ -60,23 +60,25 @@ init_read:
 		
 /* loop that reads line and stores it in the array until it hits the end of the file */
 read_line:
+	cmp r5, #404		/* if i is bigger than 100 then throw error */
+	beq error_big
 	ldr r0, ptr_file	/* r0 <- &file */
 	ldr r0, [r0]		/* r0 <- file */
 	ldr r1,	=file_format	/* r1 <- &file_format */	
 	ldr r2, ptr_array	/* r2 <- &array[0] */
 	add r2, r2, r5		/* r2 <- &array[i] */
 	bl fscanf
-	cmp r0, #0		/* if r0 is -1 that means end of file */
-	blt eof			/* exit loop if end of file */ 
 
 	add r5, r5, #4		/* i++ */	
-	cmp r5, #404		/* if i is bigger than 100 then throw error */
-	beq error_big
-	b read_line	
+	cmp r0, #0		/* if r0 is -1 that means end of file */
+	bge read_line		/* exit loop if end of file */ 
 
 /* stores the size of array and closes file */
 eof:
 	ldr r1, ptr_size_of_array	/* r1 <- &size_of_array */
+	sub r5, r5, #4	/* Had to subtract one iteration because the iterator of the 
+			loop is separated from the compare. Did this so we wouldn't
+			have a line in read_line that branches to eof in read_line */
 	str r5, [r1] 	/* size_of_array <- r5 */
 	bl close_file	/* closes file */
 
@@ -102,7 +104,7 @@ insertion_sort:
 	add r2, r2, #4	/* i++ increment the element in the array */
 	b insertion_sort	
 
-/* inner loop that swaps until everything before index is sorted */
+/* inner loop that swaps until everything before index specified in r2 is sorted */
 swaps:
 	sub r3, r3, #4	/* r3 <- &array[i-1] */
 	cmp r3, r0	/* sees if r3 is less than &array[0], if it is return to outer loop */
@@ -140,18 +142,17 @@ init_write:
 	ldr r5,	ptr_size_of_array /* r5 <- &size_of_array */
 	ldr r5, [r5] 	/* r5 <- size_of_array */	
 	sub r5, r5, #4	/* r5 = r5 - 4 */
+	ldr r6, ptr_array
 
 /* loop for writing a line to a file */
 write_line:
 	ldr r0, ptr_file	/* r0 <- &file */
 	ldr r0, [r0]		/* r0 <- file */
 	ldr r1, =out_msg	/* r1 <- &out_mst */
-	ldr r2, ptr_array	/* r2 <- &array[0] */
-	add r2, r2, r4		/* r2 <- &array[i] */
-	ldr r2, [r2]		/* r2 <- array[i] */
+	ldr r2, [r6, r4]	/* r2 <- array[i] */
 	bl fprintf
 
-	add r4, r4, #4 	/* i++ */
+	add r4, r4, #4 	/* i++, where i is the index given by r4 */
 	cmp r4, r5 	/* sees if r4 is less than or equal the address of the last element in the array */ 
 	ble write_line	/* if it isn't continue */
 
@@ -159,7 +160,7 @@ write_line:
 exit:
 	bl close_file 		/* branch to close_file */ 
 	ldr r1, ptr_return	/* r1 <- &return */
-	ldr lr, [r1]		/* r1 <- return */
+	ldr lr, [r1]		/* lr <- return */
 	bx lr			/* exit */
 
 /* opens the file specified in file_name and stores the file pointer in file */
@@ -168,10 +169,11 @@ open_file:
 	push {lr}		/* push lr onto the stack */	
 	ldr r0, ptr_file_name	/* r0 <- &file_name */
 	bl fopen		/* branch to fopen */
-	
-	/* branch to error_no_file if input file is not found */
-	cmp r0, #0
-	blt error_no_file
+
+	/* if it can't find the file it will throw an error and exit */
+	/* fopen returns the null character when it can't find the file */
+	cmp r0, #0x00
+	beq error_no_file
 
 	ldr r1, ptr_file	/* r1 <- &file */
 	str r0, [r1] 		/* file <- r0 fopen returns a pointer to the file */
@@ -195,7 +197,9 @@ error_big:
 error_no_file:
 	ldr r0, =error_no_input	/* r0 <- &error_no_input */
 	bl printf
-	b exit
+	ldr r1, ptr_return	/* r1 <- &return */
+	ldr lr, [r1]		/* lr <- return */	
+	bx lr
 		
 /* pointers to variables */
 ptr_return:		.word return
