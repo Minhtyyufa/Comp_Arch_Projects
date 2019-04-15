@@ -142,7 +142,7 @@ init_write:
 	ldr r5,	ptr_size_of_array /* r5 <- &size_of_array */
 	ldr r5, [r5] 	/* r5 <- size_of_array */	
 	sub r5, r5, #4	/* r5 = r5 - 4 */
-	ldr r6, ptr_array
+	ldr r6, ptr_array	/* r6 <- &array[0] */
 
 /* loop for writing a line to a file */
 write_line:
