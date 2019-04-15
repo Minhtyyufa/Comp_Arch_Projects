@@ -22,12 +22,16 @@ r_mode:		.string "r"	/* read mode for fscanf */
 w_mode:		.string "w"	/* write mode for fscanf */
 
 file_format:	.string "%d"	/* input format for fscanf */ 
-array:		.skip 100	/* allocation for the array */
+array:		.skip 404	/* allocation for the array */
 size_of_array:	.word 0		/* var for size_of_array. Actually size of array*4 */
 file_name:	.skip 100	/* char array to store file_name */	
 file:		.word 0		/* ptr to file */
 out_msg:	.asciz "%d \n"	/* output format for fscanf */
 return:		.word 0		/* var for return address */
+
+/* error messages */
+error_no_input: .string "Could not find the input file\n"	/* error msg for no input file */
+error_too_big:	.string "ERROR: File is too big\n"		/* error msg for too big of an array */
 
 .balign 4
 /* stores return address in return */
@@ -47,6 +51,7 @@ get_infile:
 	ldr r1, ptr_file_name	/* r1 <- &file_name */
 	bl scanf
 	
+	
 /* Opens file and initializes incrementer for reading */
 init_read:
 	ldr r1, =r_mode /* r1 <- &r_mode This is an input parameter for open_file as defined below*/
@@ -63,8 +68,10 @@ read_line:
 	bl fscanf
 	cmp r0, #0		/* if r0 is -1 that means end of file */
 	blt eof			/* exit loop if end of file */ 
-	
+
 	add r5, r5, #4		/* i++ */	
+	cmp r5, #404		/* if i is bigger than 100 then throw error */
+	beq error_big
 	b read_line	
 
 /* stores the size of array and closes file */
@@ -145,9 +152,8 @@ write_line:
 	bl fprintf
 
 	add r4, r4, #4 	/* i++ */
-	cmp r4, r5 	/* sees if r4 is greater than the address of the last element in the array */ 
-	bgt exit	/* if it is exit */
-	b write_line	/* otherwise store the next one */
+	cmp r4, r5 	/* sees if r4 is less than or equal the address of the last element in the array */ 
+	ble write_line	/* if it isn't continue */
 
 /* exit the program */
 exit:
@@ -162,6 +168,11 @@ open_file:
 	push {lr}		/* push lr onto the stack */	
 	ldr r0, ptr_file_name	/* r0 <- &file_name */
 	bl fopen		/* branch to fopen */
+	
+	/* branch to error_no_file if input file is not found */
+	cmp r0, #0
+	blt error_no_file
+
 	ldr r1, ptr_file	/* r1 <- &file */
 	str r0, [r1] 		/* file <- r0 fopen returns a pointer to the file */
 	pop {lr}		/* restore lr to its original value */
@@ -175,6 +186,16 @@ close_file:
 	bl fclose		/* branch to fclose */
 	pop {lr}		/* restore lr to its original value */
 	bx lr			/* return */
+
+error_big:
+	ldr r0, =error_too_big 	/* r0 <- &error_too_big */
+	bl printf
+	b exit
+
+error_no_file:
+	ldr r0, =error_no_input	/* r0 <- &error_no_input */
+	bl printf
+	b exit
 		
 /* pointers to variables */
 ptr_return:		.word return
