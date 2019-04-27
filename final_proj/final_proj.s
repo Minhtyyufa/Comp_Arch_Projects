@@ -143,7 +143,7 @@ insert_op:
 	add r1, r1, #1
 	ldr r2, ptr_prev_op
 	str r1, [r2]
-	beq read
+	b read
 	
 scan_num:
 	mov r3, #0
@@ -191,10 +191,28 @@ in_to_out_solve:
 	
 paren_solve:
 	pop {r2}
-	lsl r0, r2, #2
+	mov r1, r6
 	add r2, r2, r6
+	mov r3, #0
+	bl count
+
+	sub r0, r2, r6
+	sub r0, r0, r3
+	lsl r0, r0, #2
 	add r0, r8, r0
+
 	bl solve
+	b in_to_out_solve
+
+count:
+	cmp r1, r2
+	bxeq lr
+	ldrb r0, [r1]
+	cmp r0, #41 	
+	addeq r3, r3, #1
+	add r1, r1, #1
+	b count
+	
 
 solve:
 /* change this to pass r0, r2 to the indices of the left parenthesis */
@@ -254,22 +272,24 @@ add_sub_loop:
 	cmp r4, #0
 	beq end_solve
 	cmp r4, #41
-	beq end_solve
+	beq add_end 
 	
 	flds s1, [r0, #4]
 	add r0, r0, #4
 	add r2, r2, #1
 	
 	cmp r4, #43
-	beq add
+	beq add_nums
 sub_nums:
 	fsubs s1, s0, s1
 	b add_sub_loop
 	
-add:
+add_nums:
 	fadds s1, s0, s1
 	b add_sub_loop
 
+add_end:
+	add r2, r2, #1
 end_solve:
 	bl shifts
 	pop {lr}
@@ -279,11 +299,10 @@ end_solve:
 shifts:
 	fsts s0, [r1]
 	add r1, r1, #4
-	add r2, r2, #1
 	
 shift_loop:
-	ldr r4, [r2]
-	str r4, [r3]
+	ldrb r4, [r2]
+	strb r4, [r3]
 	add r2, r2, #1
 	add r3, r3, #1
 	cmp r4, #41		/* right parenthes */ 
