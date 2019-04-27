@@ -1,6 +1,7 @@
 
 .global main
 .extern printf 
+.extern sscanf
 
 .data
 .balign 4 
@@ -34,7 +35,7 @@ prev_op: 	.word 0 	/* address of the prev operator in the string */
 unknown_input_msg:	.string "ERROR: Character not recognized\n"
 
 .balign 4
-bad_format_msg:	.string "ERROR: Bad number format\n"
+bad_format_msg:	.string "ERROR: Bad equation format\n"
 
 .balign 4
 div_by_zero_msg:	.string "ERROR: Division by zero\n"
@@ -87,7 +88,7 @@ read:
 	bgt error_unknown_input
 	
 	cmp r3, #48			/* is it a number? */
-	bgt read
+	bge read
 	cmp r3, #46			/* is it the . */
 	beq read			
 	
@@ -187,7 +188,7 @@ in_to_out_solve:
 	mov r0, r8
 	mov r2, r6	
 	bl solve
-	b exit
+	b out_result 
 	
 paren_solve:
 	pop {r2}
@@ -315,13 +316,14 @@ shift_loop:
 	add r1, r1, #4
 	b shift_loop
 
-exit:
+out_result:
 	ldr r2, ptr_num_array
 	flds s0, [r2]
 	fcvtds d0, s0 
 	vmov r2, r3, d0
 	ldr r0, =out_msg		 	
 	bl printf
+exit:
 	ldr r1, ptr_return
 	ldr lr, [r1]
 	bx lr
