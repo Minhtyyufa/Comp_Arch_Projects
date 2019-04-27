@@ -9,7 +9,7 @@ in_format:	.string "%f"
 .balign 4 
 out_msg:	.string "%f"
 
-.balign 8
+.balign 4
 num_array: 	.skip 256
 
 .balign 4
@@ -34,18 +34,28 @@ div_sign:	.asciz "/"
 r_paren:	.asciz ")"
 
 .balign 4
-bot_stack:	.word 0
+bot_stack:	.word 0		/* address of the bottom of the stack */
 
 .balign 4
 prev_op: 	.word 0 	/* address of the prev operator in the string */
 
 .balign 4
-prev_was_r_pen: .word 0		/* was prev op a right parenthesis */
+prev_was_r_paren: .word 0	/* was prev op a right parenthesis */
+
+.balign 4
+unknown_input_msg:	.string "ERROR: Character not recognized\n"
+
+.balign 4
+bad_format_msg:	.string "ERROR: Bad number format\n"
 
 .balign 4 
 main: 
 	ldr r2, ptr_return
 	str lr, [r2] 
+	ldr r2, ptr_bot_stack
+	str sp, [r2] 
+
+	
 /*
 	
 	ldr r0, =in_msg
@@ -63,31 +73,33 @@ main:
 */
 init_read:
 	ldr r4, [r1, #4]
-	ldr r5, #0			/* initialize input string index to 0 */
+	mov r5, #-1			/* initialize input string index to -1 */
+	ldr r2, ptr_prev_op
+	str r4, [r2] 
 	
 	ldr r6, ptr_op_array		/* pointer to zeroth element of op_array */
-	ldr r7, #0 			/* initialize op_array index to 0 */
+	mov r7, #0 			/* initialize op_array index to 0 */
 
 	ldr r8, ptr_num_array		/* pointer to zeroth element of num_array */
-	ldr r9, #0 			/* initialize num_array index to 0 */	
+	mov r9, #0 			/* initialize num_array index to 0 */	
 	
 	mov r10, #0			/* was last op a parenth */
 
 read:
-	ldrb r3,[r4, r5]
 	add r5, r5, #1
-	cmp r3, #0x00
+	ldrb r3, [r4, r5]
+	cmp r3, #0
+
 	beq end_of_input
 	
 	/* One check of validity */
 	cmp r3, #57
 	bgt error_unknown_input
 	
-	 
 	cmp r3, #48			/* is it a number? */
-	blt read
+	bgt read
 	cmp r3, #46			/* is it the . */
-	blt read			
+	beq read			
 	
 	cmp r3, #40
 	beq left_paren
@@ -110,44 +122,59 @@ operator:
 	
 	b error_unknown_input
 
-insert_right_parent:
+left_paren:
+	push {r5} 
+	b read
+
+insert_right_paren:
 	strb r3, [r6, r7]
 	add r7, r7, #1
-	ldr r2, ptr_prev_was_paren
-	ldr r0, [r2]
-	mov r1, #0
-	str r1, [r2]
-	cmp r0, #0
-	beq scan_num	
-insert_op:
-	strb r3, [r6, r7]
-	add r7, r7, #1
-	ldr r2, ptr_prev_was_paren
+	ldr r2, ptr_prev_was_r_paren
 	ldr r0, [r2]
 	mov r1, #1
 	str r1, [r2]
 	cmp r0, #0
 	beq scan_num	
-
+	b read
+insert_op:
+	strb r3, [r6, r7]
+	add r7, r7, #1
+	ldr r2, ptr_prev_was_r_paren
+	ldr r0, [r2]
+	mov r1, #0
+	str r1, [r2]
+	cmp r0, #1
+	beq read
 	
 scan_num:
 	mov r3, #0
-	sub r1, r5, #1
-	add r1, r4, r1
-	str r3, [r1]
+	add r1, r4, r5 
+	strb r3, [r1]
 
-	ldr r2, ptr_prev_op
+	ldr r2, ptr_prev_op 	/* actually the previous op plus one */
 	ldr r0, [r2]
-	add r0, r0, #1
-	str r1, [r2] 
+	add r1, r1, #1
+	str r1, [r2]
 
 	ldr r1, =in_format
-	ldr r2, [r8, r9]
+	add r2, r8, r9
 	add r9, r9, #4
 	bl sscanf
 	cmp r0, #0
 	blt error_bad_format
-	b read 
+	b read
+
+	
+end_of_input: 
+	ldr r2, ptr_prev_op 	/* actually the previous op plus one */
+	ldr r0, [r2]
+	ldr r1, =in_format
+	add r2, r8, r9
+	bl sscanf
+	cmp r0, #0
+	blt error_bad_format
+	
+	strb r3, [r6, r7]
 	
 exit:
 	ldr r1, ptr_return
@@ -215,12 +242,27 @@ shift_loop:
 mult:
 move_on:	
 */	
+
+error_unknown_input:
+	ldr r0, =unknown_input_msg
+	bl printf
+	b exit
+
+error_bad_format:
+	ldr r0, =bad_format_msg
+	bl printf
+	b exit
+
 	
 .balign 4 
 ptr_return: 	.word return
 
 .balign 4
 ptr_bot_stack:	.word bot_stack
+
+.balign 4
+ptr_op_array: 	.word op_array
+
 .balign 4
 ptr_flt:	.word flt
 	
@@ -229,9 +271,6 @@ ptr_other_flt:	.word other_flt
 	
 .balign 4 
 ptr_num_array:	.word num_array
-	
-.balign 4 
-ptr_sym_array:	.word sym_array
 	
 .balign 4 
 ptr_mult_sign: 	.word mult_sign
@@ -246,4 +285,4 @@ ptr_r_paren:	.word r_paren
 ptr_prev_op:	.word prev_op
 
 .balign 4
-ptr_prev_was_r_paren:	.word prev_was_r_paren:
+ptr_prev_was_r_paren:	.word prev_was_r_paren
