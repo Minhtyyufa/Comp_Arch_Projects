@@ -7,7 +7,7 @@
 in_format:	.string "%f"
 
 .balign 4 
-out_msg:	.string "%lf"
+out_msg:	.string "%lf\n"
 
 .balign 4
 num_array: 	.skip 256
@@ -95,6 +95,8 @@ read:
 	beq left_paren
 
 operator:
+	strb r3, [r6, r7]
+	add r7, r7, #1
 	cmp r3, #43
 	beq insert_op 
 	
@@ -114,22 +116,33 @@ operator:
 
 left_paren:
 	push {r7} 
+	add r1, r4, r5
+	add r1, r1, #1
+	ldr r2, ptr_prev_op
+	str r1, [r2]
 	b read
 
 insert_right_paren:
-	strb r3, [r6, r7]
-	add r7, r7, #1
 	mov r0, r10 		/* was the last operator a right parenthesis */
 	mov r10, #1
 	cmp r0, #0
 	beq scan_num	
+
+	add r1, r4, r5
+	add r1, r1, #1
+	ldr r2, ptr_prev_op
+	str r1, [r2]
 	b read
 insert_op:
-	strb r3, [r6, r7]
-	add r7, r7, #1
 	mov r0, r10
 	mov r10, #0
-	cmp r0, #1
+	cmp r0, #0
+	beq scan_num
+
+	add r1, r4, r5
+	add r1, r1, #1
+	ldr r2, ptr_prev_op
+	str r1, [r2]
 	beq read
 	
 scan_num:
@@ -152,6 +165,7 @@ scan_num:
 
 	
 end_of_input: 
+	strb r3, [r6, r7]
 	ldr r2, ptr_prev_op 	/* actually the previous op plus one */
 	ldr r0, [r2]
 	ldr r1, =in_format
@@ -164,7 +178,6 @@ end_of_input:
 	*/
 
 	
-	strb r3, [r6, r7]
 	ldr r7, ptr_bot_stack
 	ldr r7, [r7]
 
@@ -173,16 +186,21 @@ in_to_out_solve:
 	bne paren_solve
 	mov r0, r8
 	mov r2, r6	
-	b solve
+	bl solve
+	b exit
 	
 paren_solve:
 	pop {r2}
 	lsl r0, r2, #2
 	add r2, r2, r6
 	add r0, r8, r0
+	bl solve
 
 solve:
 /* change this to pass r0, r2 to the indices of the left parenthesis */
+	push {lr}
+	push {r0}
+	push {r2}
 	mov r1, r0
 	mov r3, r2
 	flds s1, [r0] 
@@ -193,9 +211,9 @@ mult_div_loop:
 
 	ldrb r4, [r2]
 	cmp r4, #0
-	beq move_on
+	beq add_init 
 	cmp r4, #41
-	beq shifts
+	beq add_init 
 
 	flds s1, [r0, #4]
 	add r0, r0, #4
@@ -223,6 +241,41 @@ div:
 	fdivs s1, s0, s1
 	b mult_div_loop
 	
+add_init:
+	bl shifts		
+	pop {r2}
+	pop {r0}
+	mov r1, r0
+	mov r3, r2
+	flds s1, [r0]
+add_sub_loop:
+	fcpys s0, s1
+	ldrb r4, [r2]
+	cmp r4, #0
+	beq end_solve
+	cmp r4, #41
+	beq end_solve
+	
+	flds s1, [r0, #4]
+	add r0, r0, #4
+	add r2, r2, #1
+	
+	cmp r4, #43
+	beq add
+sub_nums:
+	fsubs s1, s0, s1
+	b add_sub_loop
+	
+add:
+	fadds s1, s0, s1
+	b add_sub_loop
+
+end_solve:
+	bl shifts
+	pop {lr}
+	bx lr
+	
+
 shifts:
 	fsts s0, [r1]
 	add r1, r1, #4
@@ -236,21 +289,20 @@ shift_loop:
 	cmp r4, #41		/* right parenthes */ 
 	beq shift_loop
 	cmp r4, #0x00
-	beq move_on
+	bxeq lr 
 	flds s1, [r0, #4]
 	add r0, r0, #4
 	fsts s1, [r1]
 	add r1, r1, #4
 	b shift_loop
-move_on:	
+
+exit:
 	ldr r2, ptr_num_array
 	flds s0, [r2]
 	fcvtds d0, s0 
-	fmdrr d0, r1, r2
+	vmov r2, r3, d0
 	ldr r0, =out_msg		 	
 	bl printf
-
-exit:
 	ldr r1, ptr_return
 	ldr lr, [r1]
 	bx lr
