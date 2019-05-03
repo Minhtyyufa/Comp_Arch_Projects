@@ -34,6 +34,7 @@ bad_format_msg:	.string "ERROR: Bad equation format\n"
 .balign 4
 num_format_msg:		.string "ERROR: Bad number format\n"
 
+
 .balign 4 
 main: 
 	ldr r2, ptr_return      /* r2 <- &return */
