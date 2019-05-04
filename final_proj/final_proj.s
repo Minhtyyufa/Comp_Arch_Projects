@@ -8,7 +8,7 @@
 in_format:	.string "%f"
 
 .balign 4 
-out_msg:	.string "%lf\n"
+out_msg:	.string "The result is: %lf\n"
 
 .balign 4
 num_array: 	.skip 256
@@ -33,7 +33,6 @@ bad_format_msg:	.string "ERROR: Bad equation format\n"
 
 .balign 4
 num_format_msg:		.string "ERROR: Bad number format\n"
-
 
 .balign 4 
 main: 
@@ -156,13 +155,18 @@ scan_num:
 
 end_of_input: 
 	strb r3, [r6, r7]       /* ith element of op_array = r3 */
+	ldr r7, ptr_bot_stack   /* r7 <- &bot_stack */
+	ldr r7, [r7]            /* r7 = bot_stack */
+	cmp r10, #1
+	beq in_to_out_solve
+final_scan:
 	ldr r2, ptr_prev_op 	/* r2 <- &prev_op */
 	ldr r0, [r2]            /* r0 <- prev_op */
 	ldr r1, =in_format      /* load = input format to r1 (sscanf will read float) */
 	add r2, r8, r9          /* r2 = pointer to ith element of num_array */
 	bl sscanf
-	ldr r7, ptr_bot_stack   /* r7 <- &bot_stack */
-	ldr r7, [r7]            /* r7 = bot_stack */
+	cmp r0, #0
+	blt error_bad_format 
 
 in_to_out_solve:
 	cmp sp, r7              /* is the bottom of the stack equal to the stack pointer? ie is the stack empty? are there paren to address? */
@@ -182,10 +186,10 @@ paren_solve:
 	mov r3, #0              /* r3 = 0 */
 	bl count
 
-	sub r0, r2, r6          /* r0 = number of operations before the left parenthesis */
-	sub r0, r0, r3          /* r0 = number of operations before the left parenthesis - 0 (???) */
-	lsl r0, r0, #2          /* logical shift left */
-	add r0, r8, r0          /* r0 = ptr_num_array + r0 (goes to ith element of num_array?) */
+	sub r0, r2, r6         
+	sub r0, r0, r3          /* offset for num_array index */
+	lsl r0, r0, #2          /* r0 = r0 *4  */
+	add r0, r8, r0          /* r0 = ptr_num_array + r0 (goes to corresponding element in num_array) */
 	mov r10, #1		/* r10 <- 1, used for parentheses alignment checking */
 
 	bl solve
@@ -324,6 +328,8 @@ exit:
 	ldr r1, ptr_return  /* r1 <- &return */
 	ldr lr, [r1]        /* lr <- return */
 	bx lr               /* branch exchange with lr */
+
+	
 
 /* ERRORS */
 error_unknown_input:
