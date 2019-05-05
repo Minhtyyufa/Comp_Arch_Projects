@@ -1,4 +1,4 @@
-final_proj:
-	gcc -o final_proj final_proj.s
+calc:
+	gcc -o calc calc.s
 clean:
-	rm final_proj
+	rm calc 

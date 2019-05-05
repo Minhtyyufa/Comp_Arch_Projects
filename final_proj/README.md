@@ -13,13 +13,13 @@ If the executable already exists, you might have to remove it first by typing:
     
 Once the executable is made, run the program by typing:
 
-    ./final_proj "<expression>"
+    ./calc "<expression>"
     
 It should be noted that the quotes are needed to recognize all expressions (especially those that start with parentheses).
 
 Example:
     
-    ./final_proj "(32+43)*3/(4-2)"
+    ./calc "(32+43)*3/(4-2)"
     
 The program should then output the result. In this case it would be:
 
