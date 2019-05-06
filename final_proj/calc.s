@@ -15,7 +15,7 @@ in_format:	.string "%f" 	/* input format for sscanf */
 out_msg:	.string "The result is: %lf\n"	/* output message format */
 
 .balign 4
-num_array: 	.skip 256	/* array to store the floating point numbers */
+num_array: 	.skip 256 	/* array to store the floating point numbers */
 
 .balign 4
 op_array:	.skip 64 	/* array to store operators and right parenthese */
